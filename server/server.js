@@ -100,7 +100,7 @@ function getLine(endnode) {
     let coordsarr = [];
 
     if (diffs[0] !== 0) {
-        xnums = getNumsBetween(startNode.x, endnode.x)
+        xnums = getNumsBetween(startNode.x, endnode.x);
         size = xnums.length;
     }
     if (diffs[0] === 0) {
@@ -423,12 +423,16 @@ function getNewLineObj(endnode) {
 }
 
 function sendResponse(apimsg, heading = null, footermsg = null, newline = null) {
-    app.ports.response.send({
-        msg: apimsg,
-        body: {
-            heading: heading,
-            message: footermsg,
-            newLine: newline
-        }
-    });
+    try {
+        app.ports.response.send({
+            msg: apimsg,
+            body: {
+                heading: heading,
+                message: footermsg,
+                newLine: newline
+            }
+        });
+    } catch (error) {
+        console.error(error);
+    }
 }
