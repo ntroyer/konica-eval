@@ -1,11 +1,5 @@
-let curPlayer = 1;
-let curMove = 'start';
-let startNode = {};
-let startPoints = new Array();
-let grid = new Map();
-let gameover = false;
-
 const gridSize = 4;
+const updateTime = 10000;
 const initMsg = "INITIALIZE";
 const updateTextMsg = 'UPDATE_TEXT';
 const nodeClickedMsg = "NODE_CLICKED";
@@ -15,17 +9,36 @@ const validEndNodeMsg = "VALID_END_NODE";
 const invalidEndNodeMsg = "INVALID_END_NODE";
 const gameOverMsg = "GAME_OVER_MSG";
 
+let curPlayer = 1;
+let curMove = 'start';
+let startNode = {};
+let startPoints = new Array();
+let grid = new Map();
+let gameComplete = false;
+let timeout;
+
 app.ports.request.subscribe((message) => {
     message = JSON.parse(message);
+    clearTimeout(timeout);
+
+    if (gameComplete) {
+        return;
+    }
     
     if (message.msg == initMsg) {
         initGrid();
         sendInitialize();
     }
 
-    if (message.msg == nodeClickedMsg && !gameover) {
+    if (message.msg == nodeClickedMsg) {
         handleNodeClicked(message.body);
     }
+
+    timeout = setTimeout(() => {
+        if (!gameComplete) {
+            sendUpdateText()
+        }
+    }, updateTime);
 });
 
 function initGrid() {
@@ -371,7 +384,7 @@ function handleValidEndNode(node) {
     addLineToGrid(node);
 
     if (isGameOver()) {
-        gameover = true;
+        gameComplete = true;
         sendGameOver(node);
     } else {
         sendValidEndNode(node);
@@ -390,7 +403,6 @@ function sendInitialize() {
     sendResponse(initMsg, getPlayerHeading(), getAwaitingMsg());
 }
 
-// TODO - call this at somepoint
 function sendUpdateText() {
     sendResponse(updateTextMsg, getPlayerHeading(), "Are you asleep?");
 }
