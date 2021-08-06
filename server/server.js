@@ -273,10 +273,6 @@ function isEndNodeValid(endnode) {
         return false;
     }
 
-    if (isPointTaken(getCoords(endnode))) {
-        return false;
-    }
-
     if (!isLineValid(endnode)) {
         return false;
     }
@@ -312,9 +308,9 @@ function isPointAvail(point, base, direction = "") {
 }
 
 function hasNoMoves(startPoint) {
-    let point = startPoint.split(',');
-    point[0] = point[0] - 1;
-    point[1] = point[1] - 1;
+    let splitPoint = startPoint.split(',');
+    let xpoint = splitPoint[0] - 1;
+    let ypoint = splitPoint[1] - 1;
 
     let nomoves = true;
 
@@ -324,8 +320,8 @@ function hasNoMoves(startPoint) {
                 continue;
             }
 
-            let x = point[0] + i;
-            let y = point[1] + j;
+            let x = xpoint + i;
+            let y = ypoint + j;
             let coords = x + ',' + y;
             let direction = getLineDirection([startPoint, coords]);
             
@@ -342,9 +338,6 @@ function setStartNode(node) {
     startNode = node;
 }
 
-// TODO - implement game over
-// thought - only the first space matters when deciding if we have valid moves left
-// see if any of the spaces around the two start points have available values
 function isGameOver() {
     if (hasNoMoves(startPoints[0]) && hasNoMoves(startPoints[1])) {
         return true;
@@ -352,20 +345,10 @@ function isGameOver() {
     return false;
 }
 
-// TODO - refactor; there's too much stuff in isEndNodeValid
 function handleNodeClicked(node) {
     if (isStartNodeSet()) {
         if (isEndNodeValid(node)) {
-            setStartPoints(node);
-            setCurPlayer();
-            addLineToGrid(node);
-
-            if (isGameOver()) {
-                gameover = true;
-                sendGameOver(node);
-            } else {
-                sendValidEndNode(node);
-            }
+            handleValidEndNode(node);
         } else {
             sendInvalidEndNode();
         }
@@ -382,12 +365,29 @@ function handleNodeClicked(node) {
     return;
 }
 
+function handleValidEndNode(node) {
+    setStartPoints(node);
+    setCurPlayer();
+    addLineToGrid(node);
+
+    if (isGameOver()) {
+        gameover = true;
+        sendGameOver(node);
+    } else {
+        sendValidEndNode(node);
+    }
+}
+
 function getPlayerHeading() {
     return "Player " + curPlayer;
 }
 
+function getAwaitingMsg() {
+    return "Awaiting " + getPlayerHeading(curPlayer) + "'s Move";
+}
+
 function sendInitialize() {
-    sendResponse(initMsg, getPlayerHeading(), "Awaiting " + getPlayerHeading(1) + "'s Move");
+    sendResponse(initMsg, getPlayerHeading(), getAwaitingMsg());
 }
 
 // TODO - call this at somepoint
@@ -404,7 +404,7 @@ function sendInvalidStartNode() {
 }
 
 function sendValidEndNode(endnode) {
-    sendResponse(validEndNodeMsg, getPlayerHeading(), null, getNewLineObj(endnode));
+    sendResponse(validEndNodeMsg, getPlayerHeading(), getAwaitingMsg(), getNewLineObj(endnode));
 }
 
 function sendInvalidEndNode() {
