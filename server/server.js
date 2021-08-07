@@ -27,7 +27,7 @@ app.ports.request.subscribe((message) => {
     
     if (message.msg == initMsg) {
         initGrid();
-        sendInitialize();
+        sendInitializeMsg();
     }
 
     if (message.msg == nodeClickedMsg) {
@@ -36,7 +36,7 @@ app.ports.request.subscribe((message) => {
 
     timeout = setTimeout(() => {
         if (!gameComplete) {
-            sendUpdateText()
+            sendUpdateTextMsg();
         }
     }, updateTime);
 });
@@ -45,7 +45,7 @@ function initGrid() {
     for (let i = 0; i < gridSize; i++) {
         for (let j = 0; j < gridSize; j++) {
             const key = i + ',' + j;
-            const point = {avail: true, diagonals: []}
+            const point = {avail: true, diagonals: []};
             grid.set(key, point);
         }
     }
@@ -307,7 +307,8 @@ function setStartPoints(node) {
     startPoints[index] = getCoords(node);
 }
 
-// TODO - add diagonal point checking
+// if the point is part of a line, or is blocked by a diagonal line, the point cannot be selected
+// otherwise, it can be
 function isPointAvail(point, base, direction = "") {
     let gridpoint = grid.get(point);
 
@@ -320,6 +321,8 @@ function isPointAvail(point, base, direction = "") {
     return true;
 }
 
+// check the points immediately surrounding the start point
+// if all the points have a line, or are being blocked by a diagonal line, the start point has no moves
 function hasNoMoves(startPoint) {
     let splitPoint = startPoint.split(',');
     let xpoint = splitPoint[0] - 1;
@@ -351,6 +354,10 @@ function setStartNode(node) {
     startNode = node;
 }
 
+function setGameComplete(isComplete) {
+    gameComplete = isComplete;
+}
+
 function isGameOver() {
     if (hasNoMoves(startPoints[0]) && hasNoMoves(startPoints[1])) {
         return true;
@@ -363,7 +370,7 @@ function handleNodeClicked(node) {
         if (isEndNodeValid(node)) {
             handleValidEndNode(node);
         } else {
-            sendInvalidEndNode();
+            sendInvalidEndNodeMsg();
         }
         setStartNode({});
         return;
@@ -371,9 +378,9 @@ function handleNodeClicked(node) {
 
     if (isStartNodeValid(node)) {
         setStartNode(node);
-        sendValidStartNode();
+        sendValidStartNodeMsg();
     } else {
-        sendInvalidStartNode();
+        sendInvalidStartNodeMsg();
     }
     return;
 }
@@ -384,10 +391,10 @@ function handleValidEndNode(node) {
     addLineToGrid(node);
 
     if (isGameOver()) {
-        gameComplete = true;
-        sendGameOver(node);
+        setGameComplete(true);
+        sendGameOverMsg(node);
     } else {
-        sendValidEndNode(node);
+        sendValidEndNodeMsg(node);
     }
 }
 
@@ -399,31 +406,31 @@ function getAwaitingMsg() {
     return "Awaiting " + getPlayerHeading(curPlayer) + "'s Move";
 }
 
-function sendInitialize() {
+function sendInitializeMsg() {
     sendResponse(initMsg, getPlayerHeading(), getAwaitingMsg());
 }
 
-function sendUpdateText() {
+function sendUpdateTextMsg() {
     sendResponse(updateTextMsg, getPlayerHeading(), "Are you asleep?");
 }
 
-function sendValidStartNode() {
+function sendValidStartNodeMsg() {
     sendResponse(validStartNodeMsg, getPlayerHeading());
 }
 
-function sendInvalidStartNode() {
+function sendInvalidStartNodeMsg() {
     sendResponse(invalidStartNodeMsg, getPlayerHeading(), "You must start on either end of the path!")
 }
 
-function sendValidEndNode(endnode) {
+function sendValidEndNodeMsg(endnode) {
     sendResponse(validEndNodeMsg, getPlayerHeading(), getAwaitingMsg(), getNewLineObj(endnode));
 }
 
-function sendInvalidEndNode() {
+function sendInvalidEndNodeMsg() {
     sendResponse(invalidEndNodeMsg, getPlayerHeading(), "Invalid move. Try again.");
 }
 
-function sendGameOver(endnote) {
+function sendGameOverMsg(endnote) {
     sendResponse(gameOverMsg, "Game Over", "Player " + curPlayer + " wins!", getNewLineObj(endnote));
 }
 
