@@ -25,12 +25,12 @@ app.ports.request.subscribe((message) => {
         return;
     }
     
-    if (message.msg == initMsg) {
+    if (message.msg === initMsg) {
         initGrid();
         sendInitializeMsg();
     }
 
-    if (message.msg == nodeClickedMsg) {
+    if (message.msg === nodeClickedMsg) {
         handleNodeClicked(message.body);
     }
 
@@ -55,16 +55,16 @@ function isStartNodeSet() {
     return startNode.hasOwnProperty('x') && startNode.hasOwnProperty('y');
 }
 
-function getCoords(node) {
+function getGraphIndex(node) {
     return node.x + ',' + node.y;
 }
 
 function isStartNodeValid(node) {
-    if (startPoints.length == 0) {
+    if (startPoints.length === 0) {
         return true;
     }
 
-    if (startPoints.indexOf(getCoords(node)) >= 0) {
+    if (startPoints.indexOf(getGraphIndex(node)) >= 0) {
         return true;
     }
 
@@ -75,8 +75,8 @@ function isEndNodeStartNode(endnode) {
     return startNode.x === endnode.x && startNode.y === endnode.y;
 }
 
-function isPointTaken(points) {
-    return grid.get(points).avail === false;
+function isPointTaken(point) {
+    return grid.get(point).avail === false;
 }
 
 function isLineValid(endnode) {
@@ -145,7 +145,7 @@ function getLine(endnode) {
 // gets all the numbers between num1 and num2
 // if num2 < num1, reverse the numbers
 function getNumsBetween(num1, num2) {
-    if (num1 == num2) {
+    if (num1 === num2) {
         return [num1];
     }
 
@@ -198,14 +198,13 @@ function isLineOpen(endnode) {
 
 function addLineToGrid(endnode) {
     const line = getLine(endnode);
-    const diagonal = isLineDiagonal(endnode);
     for (let i = 0; i < line.length; i++) {
         let point = grid.get(line[i]);
         point.avail = false;
-        if (diagonal) {
-            if (i == 0) {
+        if (isLineDiagonal(endnode)) {
+            if (i === 0) {
                 point.diagonals.push(line[i+1]);
-            } else if (i == line.length - 1) {
+            } else if (i === line.length - 1) {
                 point.diagonals.push(line[i-1]);
             } else {
                 point.diagonals.push(line[i+1]);
@@ -294,27 +293,28 @@ function isEndNodeValid(endnode) {
 }
 
 function setCurPlayer() {
-    curPlayer = curPlayer == 1 ? 2 : 1;
+    curPlayer = curPlayer === 1 ? 2 : 1;
 }
 
-function setStartPoints(node) {
-    if (startPoints.length == 0) {
-        startPoints = [getCoords(startNode), getCoords(node)];
+function setStartPoints(endnode) {
+    if (startPoints.length === 0) {
+        startPoints = [getGraphIndex(startNode), getGraphIndex(endnode)];
         return;
     }
 
-    let index = startPoints.indexOf(getCoords(startNode));
-    startPoints[index] = getCoords(node);
+    startPoints[startPoints.indexOf(getGraphIndex(startNode))] = getGraphIndex(endnode);
 }
 
 // if the point is part of a line, or is blocked by a diagonal line, the point cannot be selected
 // otherwise, it can be
 function isPointAvail(point, base, direction = "") {
-    let gridpoint = grid.get(point);
-
-    if (!gridpoint.avail) {
+    if (!grid.has(point)) {
         return false;
-    } else if (direction != "" && isPointBlocked(base, direction)) {
+    }
+
+    if (!grid.get(point).avail) {
+        return false;
+    } else if (direction !== "" && isPointBlocked(base, direction)) {
         return false;
     }
 
@@ -332,7 +332,7 @@ function hasNoMoves(startPoint) {
 
     for (let i = 0; i < 3; i++) {
         for (let j = 0; j < 3; j++) {
-            if (i == 1 && j == 1) {
+            if (i === 1 && j === 1) {
                 continue;
             }
 
@@ -341,7 +341,7 @@ function hasNoMoves(startPoint) {
             let coords = x + ',' + y;
             let direction = getLineDirection([startPoint, coords]);
             
-            if (grid.has(coords) && isPointAvail(coords, startPoint, direction)) {
+            if (isPointAvail(coords, startPoint, direction)) {
                 nomoves = false;
             }
         }
