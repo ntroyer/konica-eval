@@ -12,7 +12,7 @@ const gameOverMsg = "GAME_OVER_MSG";
 let curPlayer = 1;
 let curMove = 'start';
 let startNode = {};
-let startPoints = new Array();
+let pathEnds = new Array();
 let grid = new Map();
 let gameComplete = false;
 let timeout;
@@ -55,16 +55,20 @@ function isStartNodeSet() {
     return startNode.hasOwnProperty('x') && startNode.hasOwnProperty('y');
 }
 
-function getGraphIndex(node) {
-    return node.x + ',' + node.y;
+function getGraphIndexFromNode(node) {
+    return getGraphIndex(node.x, node.y);
+}
+
+function getGraphIndex(x, y) {
+    return x + ',' + y;
 }
 
 function isStartNodeValid(node) {
-    if (startPoints.length === 0) {
+    if (pathEnds.length === 0) {
         return true;
     }
 
-    if (startPoints.indexOf(getGraphIndex(node)) >= 0) {
+    if (pathEnds.indexOf(getGraphIndexFromNode(node)) >= 0) {
         return true;
     }
 
@@ -236,6 +240,10 @@ function getLineDirection(line) {
 }
 
 function isPointBlocked(point, direction) {
+    if (direction === "") {
+        return false;
+    }
+
     let split = point.split(',');
     let x1 = '';
     let y2 = '';
@@ -296,25 +304,29 @@ function setCurPlayer() {
     curPlayer = curPlayer === 1 ? 2 : 1;
 }
 
-function setStartPoints(endnode) {
-    if (startPoints.length === 0) {
-        startPoints = [getGraphIndex(startNode), getGraphIndex(endnode)];
+function setPathEnds(endnode) {
+    const startNodeIndex = getGraphIndexFromNode(startNode);
+    const endNodeIndex = getGraphIndexFromNode(endnode);
+    if (pathEnds.length === 0) {
+        pathEnds = [startNodeIndex, endNodeIndex];
         return;
     }
 
-    startPoints[startPoints.indexOf(getGraphIndex(startNode))] = getGraphIndex(endnode);
+    pathEnds[pathEnds.indexOf(startNodeIndex)] = endNodeIndex;
 }
 
 // if the point is part of a line, or is blocked by a diagonal line, the point cannot be selected
 // otherwise, it can be
-function isPointAvail(point, base, direction = "") {
+function canPathEndConnectToPoint(pathEnd, point) {
     if (!grid.has(point)) {
         return false;
     }
 
     if (!grid.get(point).avail) {
         return false;
-    } else if (direction !== "" && isPointBlocked(base, direction)) {
+    } 
+    
+    if (isPointBlocked(pathEnd, getLineDirection([pathEnd, point]))) {
         return false;
     }
 
@@ -323,10 +335,10 @@ function isPointAvail(point, base, direction = "") {
 
 // check the points immediately surrounding the start point
 // if all the points have a line, or are being blocked by a diagonal line, the start point has no moves
-function hasNoMoves(startPoint) {
-    let splitPoint = startPoint.split(',');
-    let xpoint = splitPoint[0] - 1;
-    let ypoint = splitPoint[1] - 1;
+function hasNoMoves(pathEnd) {
+    const splitPoint = pathEnd.split(',');
+    const xpoint = splitPoint[0] - 1;
+    const ypoint = splitPoint[1] - 1;
 
     let nomoves = true;
 
@@ -335,13 +347,8 @@ function hasNoMoves(startPoint) {
             if (i === 1 && j === 1) {
                 continue;
             }
-
-            let x = xpoint + i;
-            let y = ypoint + j;
-            let coords = x + ',' + y;
-            let direction = getLineDirection([startPoint, coords]);
             
-            if (isPointAvail(coords, startPoint, direction)) {
+            if (canPathEndConnectToPoint(pathEnd, getGraphIndex(xpoint + i, ypoint + j))) {
                 nomoves = false;
             }
         }
@@ -359,7 +366,7 @@ function setGameComplete(isComplete) {
 }
 
 function isGameOver() {
-    if (hasNoMoves(startPoints[0]) && hasNoMoves(startPoints[1])) {
+    if (hasNoMoves(pathEnds[0]) && hasNoMoves(pathEnds[1])) {
         return true;
     }
     return false;
@@ -386,7 +393,7 @@ function handleNodeClicked(node) {
 }
 
 function handleValidEndNode(node) {
-    setStartPoints(node);
+    setPathEnds(node);
     setCurPlayer();
     addLineToGrid(node);
 
