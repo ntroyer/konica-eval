@@ -106,41 +106,24 @@ function getNodeDiffs(endnode) {
     return [Math.abs(startNode.x - endnode.x), Math.abs(startNode.y - endnode.y)];
 }
 
+function isLineHorizontal(diffs) {
+    return diffs[0] === 0;
+}
+
+function isLineVertical(diffs) {
+    return diffs[1] === 0;
+}
+
 function getLineIndexes(endnode) {
     const diffs = getNodeDiffs(endnode);
+    const xnums = diffs[0] !== 0 ? getNumsBetween(startNode.x, endnode.x) : [];
+    const ynums = diffs[1] !== 0 ? getNumsBetween(startNode.y, endnode.y) : [];
 
-    let xnums = [];
-    let ynums = [];
-    let xcoord = -1;
-    let ycoord = -1;
-    let size = 0;
     let indexes = [];
-
-    if (diffs[0] !== 0) {
-        xnums = getNumsBetween(startNode.x, endnode.x);
-        size = xnums.length;
-    }
-    if (diffs[0] === 0) {
-        xcoord = startNode.x;
-    }
-    if (diffs[1] !== 0) {
-        ynums = getNumsBetween(startNode.y, endnode.y);
-        size = ynums.length;
-    }
-    if (diffs[1] === 0) {
-        ycoord = startNode.y;
-    }
-
-    for (let i = 0; i < size; i++) {
-        let index = "";
-        if (xcoord > -1) {
-            index = xcoord + ',' + ynums[i];
-        } else if (ycoord > -1) {
-            index = xnums[i] + ',' + ycoord;
-        } else {
-            index = xnums[i] + ',' + ynums[i];
-        }
-        indexes.push(index);
+    for (let i = 0; i < Math.max(xnums.length, ynums.length); i++) {
+        let x = isLineHorizontal(diffs) ? startNode.x : xnums[i];
+        let y = isLineVertical(diffs) ? startNode.y : ynums[i];
+        indexes.push(getGraphIndex(x, y));
     }
 
     return indexes;
@@ -153,25 +136,14 @@ function getNumsBetween(num1, num2) {
         return [num1];
     }
 
+    const largenum = Math.max(num1, num2)
     let nums = [];
-    let smallnum = num1;
-    let largenum = num2;
-
-    if (num2 < num1) {
-        smallnum = num2;
-        largenum = num1;
-    }
-
-    for (let i = smallnum; i < largenum; i++) {
+    for (let i = Math.min(num1, num2); i < largenum; i++) {
         nums.push(i);
     }
     nums.push(largenum);
 
-    if (num2 < num1) {
-        nums.reverse();
-    }
-
-    return nums;
+    return num2 < num1 ? nums.reverse() : nums;
 }
 
 // we know a line is octilinear given the following:
