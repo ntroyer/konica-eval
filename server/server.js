@@ -1,3 +1,5 @@
+'use strict';
+
 const gridSize = 4;
 const updateTime = 10000;
 const initMsg = "INITIALIZE";
@@ -41,12 +43,17 @@ app.ports.request.subscribe((message) => {
     }, updateTime);
 });
 
+function getDefaultPoint() {
+    return {
+        avail: true, 
+        diagonals: []
+    };
+}
+
 function initGrid() {
     for (let i = 0; i < gridSize; i++) {
         for (let j = 0; j < gridSize; j++) {
-            const key = i + ',' + j;
-            const point = {avail: true, diagonals: []};
-            grid.set(key, point);
+            grid.set(getPointIndex(i, j), getDefaultPoint());
         }
     }
 }
@@ -55,11 +62,11 @@ function isStartNodeSet() {
     return startNode.hasOwnProperty('x') && startNode.hasOwnProperty('y');
 }
 
-function getGraphIndexFromNode(node) {
-    return getGraphIndex(node.x, node.y);
+function getPointIndexFromNode(node) {
+    return getPointIndex(node.x, node.y);
 }
 
-function getGraphIndex(x, y) {
+function getPointIndex(x, y) {
     return x + ',' + y;
 }
 
@@ -68,7 +75,7 @@ function isStartNodeValid(node) {
         return true;
     }
 
-    if (pathEnds.indexOf(getGraphIndexFromNode(node)) >= 0) {
+    if (pathEnds.indexOf(getPointIndexFromNode(node)) >= 0) {
         return true;
     }
 
@@ -98,7 +105,6 @@ function isLineValid(endnode) {
 // we know our line is diagonal if the difference in distance between two points is the same for both our x and y coords and > 0
 function isLineDiagonal(endnode) {
     const diffs = getNodeDiffs(endnode);
-
     return diffs[0] > 0 && diffs[0] === diffs[1];
 }
 
@@ -123,7 +129,7 @@ function getLineIndexes(endnode) {
     for (let i = 0; i < Math.max(xnums.length, ynums.length); i++) {
         let x = isLineHorizontal(diffs) ? startNode.x : xnums[i];
         let y = isLineVertical(diffs) ? startNode.y : ynums[i];
-        indexes.push(getGraphIndex(x, y));
+        indexes.push(getPointIndex(x, y));
     }
 
     return indexes;
@@ -177,13 +183,11 @@ function addLineToGrid(endnode) {
         let point = grid.get(indexes[i]);
         point.avail = false;
         if (isLineDiagonal(endnode)) {
-            if (i === 0) {
-                point.diagonals.push(indexes[i+1]);
-            } else if (i === indexes.length - 1) {
+            if (i > 0) {
                 point.diagonals.push(indexes[i-1]);
-            } else {
+            }
+            if (i < indexes.length - 1) {
                 point.diagonals.push(indexes[i+1]);
-                point.diagonals.push(indexes[i-1]);
             }
         }
         grid.set(indexes[i], point);
@@ -191,19 +195,19 @@ function addLineToGrid(endnode) {
 }
 
 function getLineDirection(indexes) {
-    const firstpoint = indexes[0].split(',');
-    const lastpoint = indexes[indexes.length - 1].split(',');
+    const firstIndex = indexes[0].split(',');
+    const lastIndex = indexes[indexes.length - 1].split(',');
 
-    if (firstpoint[0] < lastpoint[0] && firstpoint[1] < lastpoint[1]) {
+    if (firstIndex[0] < lastIndex[0] && firstIndex[1] < lastIndex[1]) {
         return "se";
     }
-    if (firstpoint[0] > lastpoint[0] && firstpoint[1] < lastpoint[1]) {
+    if (firstIndex[0] > lastIndex[0] && firstIndex[1] < lastIndex[1]) {
         return "sw";
     }
-    if (firstpoint[0] > lastpoint[0] && firstpoint[1] > lastpoint[1]) {
+    if (firstIndex[0] > lastIndex[0] && firstIndex[1] > lastIndex[1]) {
         return "nw";
     }
-    if (firstpoint[0] < lastpoint[0] && firstpoint[1] > lastpoint[1]) {
+    if (firstIndex[0] < lastIndex[0] && firstIndex[1] > lastIndex[1]) {
         return "ne";
     }
 
@@ -234,7 +238,7 @@ function isPointBlocked(index, direction) {
         x1 = x2 - 1;
     }
 
-    return grid.get(getGraphIndex(x1, y1)).diagonals.indexOf(getGraphIndex(x2, y2)) >= 0;
+    return grid.get(getPointIndex(x1, y1)).diagonals.indexOf(getPointIndex(x2, y2)) >= 0;
 }
 
 function hasDiagonalOverlap(endnode) {
@@ -242,16 +246,16 @@ function hasDiagonalOverlap(endnode) {
         return false;
     }
 
-    const points = getLineIndexes(endnode);
-    const direction = getLineDirection(points);
+    const indexes = getLineIndexes(endnode);
+    const direction = getLineDirection(indexes);
     if (direction === "") {
         return false;
     }
 
     let hasOverlap = false;
 
-    for (let i = 0; i < points.length - 1; i++) {
-        if (isPointBlocked(points[i], direction)) {
+    for (let i = 0; i < indexes.length - 1; i++) {
+        if (isPointBlocked(indexes[i], direction)) {
             hasOverlap = true;
         }
     }
@@ -276,8 +280,8 @@ function setCurPlayer() {
 }
 
 function setPathEnds(endnode) {
-    const startNodeIndex = getGraphIndexFromNode(startNode);
-    const endNodeIndex = getGraphIndexFromNode(endnode);
+    const startNodeIndex = getPointIndexFromNode(startNode);
+    const endNodeIndex = getPointIndexFromNode(endnode);
     if (pathEnds.length === 0) {
         pathEnds = [startNodeIndex, endNodeIndex];
         return;
@@ -307,9 +311,9 @@ function canPathEndConnectToPoint(pathEnd, point) {
 // check the points immediately surrounding the start point
 // if all the points have a line, or are being blocked by a diagonal line, the start point has no moves
 function hasNoMoves(pathEnd) {
-    const splitPoint = pathEnd.split(',');
-    const xpoint = splitPoint[0] - 1;
-    const ypoint = splitPoint[1] - 1;
+    const splitIndex = pathEnd.split(',');
+    const x = splitIndex[0] - 1;
+    const y = splitIndex[1] - 1;
 
     let nomoves = true;
 
@@ -319,7 +323,7 @@ function hasNoMoves(pathEnd) {
                 continue;
             }
             
-            if (canPathEndConnectToPoint(pathEnd, getGraphIndex(xpoint + i, ypoint + j))) {
+            if (canPathEndConnectToPoint(pathEnd, getPointIndex(x + i, y + j))) {
                 nomoves = false;
             }
         }
