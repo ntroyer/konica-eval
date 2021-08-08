@@ -164,14 +164,10 @@ function getNumsBetween(num1, num2) {
 // all points have the same difference between x and y axis
 function isLineOctilinear(endnode) {
     const diffs = getNodeDiffs(endnode);
-    if (diffs[0] === 0 || diffs[1] === 0 || diffs[0] === diffs[1]) {
-        return true;
-    }
-
-    return false;
+    return diffs[0] === 0 || diffs[1] === 0 || diffs[0] === diffs[1];
 }
 
-// return true if all points in the line except for the first aren't already taken
+// return true if all points in the line except for the first aren't already occupied by a line
 function isLineOpen(endnode) {
     const indexes = getLineIndexes(endnode);
     let isOpen = true;
@@ -315,8 +311,8 @@ function canPathEndConnectToPoint(pathEnd, point) {
     return true;
 }
 
-// check the points immediately surrounding the start point
-// if all the points have a line, or are being blocked by a diagonal line, the start point has no moves
+// check the points immediately surrounding the path end
+// if all the points have a line, or are being blocked by a diagonal line, the path end can't form any new lines
 function hasNoMoves(pathEnd) {
     const pathEndNums = getIndexNums(pathEnd);
     let nomoves = true;
@@ -344,6 +340,7 @@ function setGameComplete(isComplete) {
     gameComplete = isComplete;
 }
 
+// the game ends when no valid moves exist for each of the path ends
 function isGameOver() {
     if (hasNoMoves(pathEnds[0]) && hasNoMoves(pathEnds[1])) {
         return true;
