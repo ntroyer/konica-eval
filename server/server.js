@@ -106,7 +106,7 @@ function getNodeDiffs(endnode) {
     return [Math.abs(startNode.x - endnode.x), Math.abs(startNode.y - endnode.y)];
 }
 
-function getLine(endnode) {
+function getLineIndexes(endnode) {
     const diffs = getNodeDiffs(endnode);
 
     let xnums = [];
@@ -114,7 +114,7 @@ function getLine(endnode) {
     let xcoord = -1;
     let ycoord = -1;
     let size = 0;
-    let coordsarr = [];
+    let indexes = [];
 
     if (diffs[0] !== 0) {
         xnums = getNumsBetween(startNode.x, endnode.x);
@@ -132,18 +132,18 @@ function getLine(endnode) {
     }
 
     for (let i = 0; i < size; i++) {
-        let coords = "";
+        let index = "";
         if (xcoord > -1) {
-            coords = xcoord + ',' + ynums[i];
+            index = xcoord + ',' + ynums[i];
         } else if (ycoord > -1) {
-            coords = xnums[i] + ',' + ycoord;
+            index = xnums[i] + ',' + ycoord;
         } else {
-            coords = xnums[i] + ',' + ynums[i];
+            index = xnums[i] + ',' + ynums[i];
         }
-        coordsarr.push(coords);
+        indexes.push(index);
     }
 
-    return coordsarr;
+    return indexes;
 }
 
 // gets all the numbers between num1 and num2
@@ -179,7 +179,6 @@ function getNumsBetween(num1, num2) {
 // all points have the same difference between x and y axis
 function isLineOctilinear(endnode) {
     const diffs = getNodeDiffs(endnode);
-
     if (diffs[0] === 0 || diffs[1] === 0 || diffs[0] === diffs[1]) {
         return true;
     }
@@ -189,11 +188,11 @@ function isLineOctilinear(endnode) {
 
 // return true if all points in the line except for the first aren't already taken
 function isLineOpen(endnode) {
+    const indexes = getLineIndexes(endnode);
     let isOpen = true;
-    let points = getLine(endnode);
 
-    for (let i = 1; i < points.length; i++) {
-        if (isPointTaken(points[i])) {
+    for (let i = 1; i < indexes.length; i++) {
+        if (isPointTaken(indexes[i])) {
             isOpen = false;
         }
     }
@@ -201,27 +200,27 @@ function isLineOpen(endnode) {
 }
 
 function addLineToGrid(endnode) {
-    const line = getLine(endnode);
-    for (let i = 0; i < line.length; i++) {
-        let point = grid.get(line[i]);
+    const indexes = getLineIndexes(endnode);
+    for (let i = 0; i < indexes.length; i++) {
+        let point = grid.get(indexes[i]);
         point.avail = false;
         if (isLineDiagonal(endnode)) {
             if (i === 0) {
-                point.diagonals.push(line[i+1]);
-            } else if (i === line.length - 1) {
-                point.diagonals.push(line[i-1]);
+                point.diagonals.push(indexes[i+1]);
+            } else if (i === indexes.length - 1) {
+                point.diagonals.push(indexes[i-1]);
             } else {
-                point.diagonals.push(line[i+1]);
-                point.diagonals.push(line[i-1]);
+                point.diagonals.push(indexes[i+1]);
+                point.diagonals.push(indexes[i-1]);
             }
         }
-        grid.set(line[i], point);
+        grid.set(indexes[i], point);
     }
 }
 
-function getLineDirection(line) {
-    const firstpoint = line[0].split(',');
-    const lastpoint = line[line.length - 1].split(',');
+function getLineDirection(indexes) {
+    const firstpoint = indexes[0].split(',');
+    const lastpoint = indexes[indexes.length - 1].split(',');
 
     if (firstpoint[0] < lastpoint[0] && firstpoint[1] < lastpoint[1]) {
         return "se";
@@ -239,31 +238,31 @@ function getLineDirection(line) {
     return "";
 }
 
-function isPointBlocked(point, direction) {
+function isPointBlocked(index, direction) {
     if (direction === "") {
         return false;
     }
 
-    let split = point.split(',');
-    let x1 = '';
-    let y2 = '';
+    let splitIndex = index.split(',');
+    let x1 = 0;
+    let x2 = parseInt(splitIndex[0]);
+    let y1 = parseInt(splitIndex[1]);
+    let y2 = 0;
+
     if (direction.charAt(0) === "n") {
-        y2 = parseInt(split[1]) - 1;
+        y2 = y1 - 1;
     }
     if (direction.charAt(0) === "s") {
-        y2 = parseInt(split[1]) + 1;
+        y2 = y1 + 1;
     }
     if (direction.charAt(1) === "e") {
-        x1 = parseInt(split[0]) + 1;
+        x1 = x2 + 1;
     }
     if (direction.charAt(1) === "w") {
-        x1 = parseInt(split[0]) - 1;
+        x1 = x2 - 1;
     }
 
-    let checkpoint1 = grid.get(x1 + "," + split[1]);
-    let checkpoint2 = split[0] + "," + y2;
-
-    return checkpoint1.diagonals.indexOf(checkpoint2) >= 0;
+    return grid.get(getGraphIndex(x1, y1)).diagonals.indexOf(getGraphIndex(x2, y2)) >= 0;
 }
 
 function hasDiagonalOverlap(endnode) {
@@ -271,7 +270,7 @@ function hasDiagonalOverlap(endnode) {
         return false;
     }
 
-    const points = getLine(endnode);
+    const points = getLineIndexes(endnode);
     const direction = getLineDirection(points);
     if (direction === "") {
         return false;
