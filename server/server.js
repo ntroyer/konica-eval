@@ -2,6 +2,7 @@
 
 const gridSize = 4;
 const updateTime = 10000;
+
 const initMsg = "INITIALIZE";
 const updateTextMsg = 'UPDATE_TEXT';
 const nodeClickedMsg = "NODE_CLICKED";
@@ -11,8 +12,13 @@ const validEndNodeMsg = "VALID_END_NODE";
 const invalidEndNodeMsg = "INVALID_END_NODE";
 const gameOverMsg = "GAME_OVER_MSG";
 
+const asleepFooterMsg = "Are you asleep?";
+const invalidStartNodeFooterMsg = "You must start on either end of the path!";
+const invalidEndNodeFooterMsg = "Invalid move. Try again.";
+
+const gameOverHeading = "Game Over";
+
 let curPlayer = 1;
-let curMove = 'start';
 let startNode = {};
 let pathEnds = new Array();
 let grid = new Map();
@@ -62,10 +68,6 @@ function isStartNodeSet() {
     return startNode.hasOwnProperty('x') && startNode.hasOwnProperty('y');
 }
 
-function getPointIndexFromNode(node) {
-    return getPointIndex(node.x, node.y);
-}
-
 function getPointIndex(x, y) {
     return x + ',' + y;
 }
@@ -80,7 +82,7 @@ function isStartNodeValid(node) {
         return true;
     }
 
-    if (pathEnds.indexOf(getPointIndexFromNode(node)) >= 0) {
+    if (pathEnds.indexOf(getPointIndex(node.x, node.y)) >= 0) {
         return true;
     }
 
@@ -285,8 +287,8 @@ function setCurPlayer() {
 }
 
 function setPathEnds(endnode) {
-    const startNodeIndex = getPointIndexFromNode(startNode);
-    const endNodeIndex = getPointIndexFromNode(endnode);
+    const startNodeIndex = getPointIndex(startNode.x, startNode.y);
+    const endNodeIndex = getPointIndex(endnode.x, endnode.y);
     if (pathEnds.length === 0) {
         pathEnds = [startNodeIndex, endNodeIndex];
         return;
@@ -390,12 +392,16 @@ function getAwaitingMsg() {
     return "Awaiting " + getPlayerHeading(curPlayer) + "'s Move";
 }
 
+function getGameOverFooterMsg() {
+    return "Player " + curPlayer + " wins!";
+}
+
 function sendInitializeMsg() {
     sendResponse(initMsg, getPlayerHeading(), getAwaitingMsg());
 }
 
 function sendUpdateTextMsg() {
-    sendResponse(updateTextMsg, getPlayerHeading(), "Are you asleep?");
+    sendResponse(updateTextMsg, getPlayerHeading(), asleepFooterMsg);
 }
 
 function sendValidStartNodeMsg() {
@@ -403,7 +409,7 @@ function sendValidStartNodeMsg() {
 }
 
 function sendInvalidStartNodeMsg() {
-    sendResponse(invalidStartNodeMsg, getPlayerHeading(), "You must start on either end of the path!")
+    sendResponse(invalidStartNodeMsg, getPlayerHeading(), invalidStartNodeFooterMsg)
 }
 
 function sendValidEndNodeMsg(endnode) {
@@ -411,11 +417,11 @@ function sendValidEndNodeMsg(endnode) {
 }
 
 function sendInvalidEndNodeMsg() {
-    sendResponse(invalidEndNodeMsg, getPlayerHeading(), "Invalid move. Try again.");
+    sendResponse(invalidEndNodeMsg, getPlayerHeading(), invalidEndNodeFooterMsg);
 }
 
 function sendGameOverMsg(endnote) {
-    sendResponse(gameOverMsg, "Game Over", "Player " + curPlayer + " wins!", getNewLineObj(endnote));
+    sendResponse(gameOverMsg, gameOverHeading, getGameOverFooterMsg(), getNewLineObj(endnote));
 }
 
 function getNewLineObj(endnode) {
