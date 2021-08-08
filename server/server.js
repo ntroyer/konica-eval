@@ -217,9 +217,9 @@ function getLineDirection(indexes) {
     return "";
 }
 
-function isPointBlocked(index, direction) {
+function canPointMakeLineInDirection(index, direction) {
     if (direction === "") {
-        return false;
+        return true;
     }
 
     const indexNums = getIndexNums(index);
@@ -241,7 +241,7 @@ function isPointBlocked(index, direction) {
         x1 = x2 - 1;
     }
 
-    return grid.get(getPointIndex(x1, y1)).diagonals.indexOf(getPointIndex(x2, y2)) >= 0;
+    return grid.get(getPointIndex(x1, y1)).diagonals.indexOf(getPointIndex(x2, y2)) < 0;
 }
 
 function hasDiagonalOverlap(endnode) {
@@ -258,7 +258,7 @@ function hasDiagonalOverlap(endnode) {
     let hasOverlap = false;
 
     for (let i = 0; i < indexes.length - 1; i++) {
-        if (isPointBlocked(indexes[i], direction)) {
+        if (!canPointMakeLineInDirection(indexes[i], direction)) {
             hasOverlap = true;
         }
     }
@@ -304,7 +304,7 @@ function canPathEndConnectToPoint(pathEnd, point) {
         return false;
     } 
     
-    if (isPointBlocked(pathEnd, getLineDirection([pathEnd, point]))) {
+    if (!canPointMakeLineInDirection(pathEnd, getLineDirection([pathEnd, point]))) {
         return false;
     }
 
