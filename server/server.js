@@ -70,6 +70,11 @@ function getPointIndex(x, y) {
     return x + ',' + y;
 }
 
+function getIndexNums(index) {
+    const splitIndex = index.split(',');
+    return [parseInt(splitIndex[0]), parseInt(splitIndex[1])];
+}
+
 function isStartNodeValid(node) {
     if (pathEnds.length === 0) {
         return true;
@@ -195,19 +200,19 @@ function addLineToGrid(endnode) {
 }
 
 function getLineDirection(indexes) {
-    const firstIndex = indexes[0].split(',');
-    const lastIndex = indexes[indexes.length - 1].split(',');
+    const firstIndexNums = getIndexNums(indexes[0]);
+    const lastIndexNums = getIndexNums(indexes[indexes.length - 1]);
 
-    if (firstIndex[0] < lastIndex[0] && firstIndex[1] < lastIndex[1]) {
+    if (firstIndexNums[0] < lastIndexNums[0] && firstIndexNums[1] < lastIndexNums[1]) {
         return "se";
     }
-    if (firstIndex[0] > lastIndex[0] && firstIndex[1] < lastIndex[1]) {
+    if (firstIndexNums[0] > lastIndexNums[0] && firstIndexNums[1] < lastIndexNums[1]) {
         return "sw";
     }
-    if (firstIndex[0] > lastIndex[0] && firstIndex[1] > lastIndex[1]) {
+    if (firstIndexNums[0] > lastIndexNums[0] && firstIndexNums[1] > lastIndexNums[1]) {
         return "nw";
     }
-    if (firstIndex[0] < lastIndex[0] && firstIndex[1] > lastIndex[1]) {
+    if (firstIndexNums[0] < lastIndexNums[0] && firstIndexNums[1] > lastIndexNums[1]) {
         return "ne";
     }
 
@@ -219,10 +224,10 @@ function isPointBlocked(index, direction) {
         return false;
     }
 
-    let splitIndex = index.split(',');
+    const indexNums = getIndexNums(index);
     let x1 = 0;
-    let x2 = parseInt(splitIndex[0]);
-    let y1 = parseInt(splitIndex[1]);
+    let x2 = indexNums[0];
+    let y1 = indexNums[1];
     let y2 = 0;
 
     if (direction.charAt(0) === "n") {
@@ -311,10 +316,7 @@ function canPathEndConnectToPoint(pathEnd, point) {
 // check the points immediately surrounding the start point
 // if all the points have a line, or are being blocked by a diagonal line, the start point has no moves
 function hasNoMoves(pathEnd) {
-    const splitIndex = pathEnd.split(',');
-    const x = splitIndex[0] - 1;
-    const y = splitIndex[1] - 1;
-
+    const pathEndNums = getIndexNums(pathEnd);
     let nomoves = true;
 
     for (let i = 0; i < 3; i++) {
@@ -323,7 +325,7 @@ function hasNoMoves(pathEnd) {
                 continue;
             }
             
-            if (canPathEndConnectToPoint(pathEnd, getPointIndex(x + i, y + j))) {
+            if (canPathEndConnectToPoint(pathEnd, getPointIndex(pathEndNums[0] - 1 + i, pathEndNums[1] - 1 + j))) {
                 nomoves = false;
             }
         }
