@@ -94,7 +94,7 @@ function isEndNodeStartNode(endnode) {
 }
 
 function isPointTaken(point) {
-    return grid.get(point).avail === false;
+    return !grid.get(point).avail;
 }
 
 function isLineValid(endnode) {
@@ -127,10 +127,11 @@ function isLineVertical(diffs) {
     return diffs[1] === 0;
 }
 
+// get the indexes for each point between and including the start node and the end node
 function getLineIndexes(endnode) {
     const diffs = getNodeDiffs(endnode);
-    const xnums = diffs[0] !== 0 ? getNumsBetween(startNode.x, endnode.x) : [];
-    const ynums = diffs[1] !== 0 ? getNumsBetween(startNode.y, endnode.y) : [];
+    const xnums = !isLineHorizontal(diffs) ? getNumsBetween(startNode.x, endnode.x) : [];
+    const ynums = !isLineVertical(diffs) ? getNumsBetween(startNode.y, endnode.y) : [];
 
     let indexes = [];
     for (let i = 0; i < Math.max(xnums.length, ynums.length); i++) {
@@ -217,6 +218,7 @@ function getLineDirection(indexes) {
     return "";
 }
 
+// check whether a point can make an adjacent point part of a line. if we can, return true
 function canPointMakeLineInDirection(index, direction) {
     if (direction === "") {
         return true;
@@ -244,6 +246,7 @@ function canPointMakeLineInDirection(index, direction) {
     return grid.get(getPointIndex(x1, y1)).diagonals.indexOf(getPointIndex(x2, y2)) < 0;
 }
 
+// if we are attempting to draw a line, but there's a diagonal line between the line we're trying to draw, return true
 function hasDiagonalOverlap(endnode) {
     if (!isLineDiagonal(endnode)) {
         return false;
