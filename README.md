@@ -1,6 +1,6 @@
-## Eval for Konica Minolta
+## Technical Assessment for Konica Minolta
 
-This solution to the Konica Minolta eval uses the Client API and no external libraries.
+This solution to the Konica Minolta assessment uses the Client API and no external libraries.
 
 ### Instructions
 
